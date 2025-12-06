@@ -27,6 +27,7 @@ func main() {
 	// Setup routes and start server
 	e := echo.New()
 	e.Validator = utils.NewValidator()
+	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
 
 	apiV1 := e.Group("/api/v1")
 
