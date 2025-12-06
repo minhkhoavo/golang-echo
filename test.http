@@ -8,9 +8,18 @@ POST http://localhost:8080/api/v1/users
 Content-Type: application/json
 
 {
-  "name": "John Doe",
-  "email": "john@example.com",
+  "name": "John Doe 5",
+  "email": "john5@example.com",
   "password": "password123"
 }
 
 ###
+
+### Test GET /api/v1/users/:id - Create a new user
+GET http://localhost:8080/api/v1/users/2
+Content-Type: application/json
+
+### Test GET /api/v1/users?email= - Find User by Email
+GET http://localhost:8080/api/v1/users/by-email?email=john2@example.com
+Content-Type: application/json
+

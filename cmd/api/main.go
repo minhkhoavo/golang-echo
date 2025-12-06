@@ -32,6 +32,8 @@ func main() {
 
 	userGroup := apiV1.Group("/users")
 	userGroup.GET("", userHandler.FindAllUsers)
+	userGroup.GET("/:id", userHandler.FindUserByID)
+	userGroup.GET("/by-email", userHandler.FindUserByEmail)
 	userGroup.POST("", userHandler.CreateUser)
 
 	e.Start(":8080")

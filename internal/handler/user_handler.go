@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"golang-echo/internal/model"
 	"golang-echo/internal/service"
 	"log"
@@ -11,19 +12,15 @@ import (
 type IUserHandler interface {
 	CreateUser(c echo.Context) error
 	FindAllUsers(c echo.Context) error
+	FindUserByID(c echo.Context) error
+	FindUserByEmail(c echo.Context) error
 }
 
-type UserHandler struct {
+type userHandler struct {
 	userService service.IUserService
 }
 
-func NewUserHandler(userService service.IUserService) IUserHandler {
-	return &UserHandler{
-		userService: userService,
-	}
-}
-
-func (h *UserHandler) CreateUser(c echo.Context) error {
+func (h *userHandler) CreateUser(c echo.Context) error {
 	var req model.CreateUserRequest
 	if err := c.Bind(&req); err != nil {
 		log.Printf("Bind error: %v", err)
@@ -42,10 +39,43 @@ func (h *UserHandler) CreateUser(c echo.Context) error {
 	return c.JSON(201, user)
 }
 
-func (h *UserHandler) FindAllUsers(c echo.Context) error {
+func (h *userHandler) FindAllUsers(c echo.Context) error {
 	users, err := h.userService.FindAllUsers(c.Request().Context())
 	if err != nil {
+		log.Printf("Find all users error: %v", err)
 		return c.JSON(500, map[string]string{"error": "Failed to retrieve users"})
 	}
 	return c.JSON(200, users)
+}
+
+func (h *userHandler) FindUserByID(c echo.Context) error {
+	id := c.Param("id")
+	user, err := h.userService.FindUserByID(c.Request().Context(), id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(404, map[string]string{"error": "User not found"})
+		}
+		log.Printf("Find user by ID error: %v", err)
+		return c.JSON(500, map[string]string{"error": "Failed to retrieve user"})
+	}
+	return c.JSON(200, user)
+}
+
+func (h *userHandler) FindUserByEmail(c echo.Context) error {
+	email := c.QueryParam("email")
+	user, err := h.userService.FindUserByEmail(c.Request().Context(), email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(404, map[string]string{"error": "User not found"})
+		}
+		log.Printf("Find user by email error: %v", err)
+		return c.JSON(500, map[string]string{"error": "Failed to retrieve user"})
+	}
+	return c.JSON(200, user)
+}
+
+func NewUserHandler(userService service.IUserService) IUserHandler {
+	return &userHandler{
+		userService: userService,
+	}
 }
