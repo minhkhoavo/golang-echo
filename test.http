@@ -1,9 +1,33 @@
 ### Test GET /api/v1/users - Get all users
+# Expected Response (Consistent Wrapper Format):
+# {
+#   "code": "SUCCESS",
+#   "message": "Users retrieved successfully",
+#   "data": [
+#     { "id": 1, "name": "...", "email": "...", "created_at": "...", "updated_at": "..." },
+#     ...
+#   ],
+#   "request_id": "..."
+# }
 GET http://localhost:8080/api/v1/users
 
 ###
 
 ### Test POST /api/v1/users - Create a new user
+# Expected Success Response (201 Created - Consistent Wrapper):
+# {
+#   "code": "SUCCESS",
+#   "message": "User created successfully",
+#   "data": { "id": 1, "name": "John Doe 5", "email": "john6@example.com", "password": "...", "created_at": "...", "updated_at": "..." },
+#   "request_id": "..."
+# }
+#
+# Expected Error Response (409 Conflict - Consistent Error Format):
+# {
+#   "code": "EMAIL_ALREADY_REGISTERED",
+#   "message": "Email is already registered",
+#   "request_id": "..."
+# }
 POST http://localhost:8080/api/v1/users
 Content-Type: application/json
 
@@ -15,11 +39,57 @@ Content-Type: application/json
 
 ###
 
-### Test GET /api/v1/users/:id - Create a new user
+### Test GET /api/v1/users/:id - Get user by ID
+# Expected Success Response (200 OK - Consistent Wrapper):
+# {
+#   "code": "SUCCESS",
+#   "message": "User retrieved successfully",
+#   "data": { "id": 2, "name": "...", "email": "...", "password": "...", "created_at": "...", "updated_at": "..." },
+#   "request_id": "..."
+# }
+#
+# Expected Error Response (404 Not Found - Consistent Error Format):
+# {
+#   "code": "USER_NOT_FOUND",
+#   "message": "User not found",
+#   "request_id": "..."
+# }
 GET http://localhost:8080/api/v1/users/2
+
+###
+
+### Test GET /api/v1/users/by-email - Find User by Email
+# Expected Success Response (200 OK - Consistent Wrapper):
+# {
+#   "code": "SUCCESS",
+#   "message": "User retrieved successfully",
+#   "data": { "id": 1, "email": "john2@example.com", ... },
+#   "request_id": "..."
+# }
+#
+# Expected Error Response (404 Not Found - Consistent Error Format):
+# {
+#   "code": "USER_NOT_FOUND",
+#   "message": "User not found",
+#   "request_id": "..."
+# }
+GET http://localhost:8080/api/v1/users/by-email?email=john2@example.com
+
+###
+
+### Test POST /api/v1/users - Validation Error
+# Expected Error Response (400 Bad Request - Consistent Error Format):
+# {
+#   "code": "VALIDATION_FAILED",
+#   "message": "Validation failed",
+#   "request_id": "..."
+# }
+POST http://localhost:8080/api/v1/users
 Content-Type: application/json
 
-### Test GET /api/v1/users?email= - Find User by Email
-GET http://localhost:8080/api/v1/users/by-email?email=john2@example.com
-Content-Type: application/json
+{
+  "name": "",
+  "email": "invalid-email",
+  "password": "123"
+}
 

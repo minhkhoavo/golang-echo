@@ -47,22 +47,18 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		log.Errorf("Unhandled error occurred: %v", err)
 	}
 
-	// 3. Build standard response
-	// Get Request ID if available
-	reqID := c.Response().Header().Get(echo.HeaderXRequestID)
-
-	response := map[string]interface{}{
-		"status":     code,
-		"error_code": key,
-		"message":    msg,
-		"request_id": reqID,
+	// 3. Build standard error response
+	errorResponse := response.ErrorResponse{
+		Code:      key,
+		Message:   msg,
+		RequestID: c.Response().Header().Get(echo.HeaderXRequestID),
 	}
 
 	// 4. Send response to client
 	if c.Request().Method == http.MethodHead {
 		err = c.NoContent(code)
 	} else {
-		err = c.JSON(code, response)
+		err = c.JSON(code, errorResponse)
 	}
 
 	// Fallback if sending JSON also fails

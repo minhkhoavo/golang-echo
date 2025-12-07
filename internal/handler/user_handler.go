@@ -32,7 +32,7 @@ func (h *userHandler) CreateUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(201, user)
+	return response.Created(c, "SUCCESS", "User created successfully", user)
 }
 
 func (h *userHandler) FindAllUsers(c echo.Context) error {
@@ -40,7 +40,7 @@ func (h *userHandler) FindAllUsers(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, users)
+	return response.List(c, "SUCCESS", "Users retrieved successfully", users)
 }
 
 func (h *userHandler) FindUserByID(c echo.Context) error {
@@ -49,7 +49,7 @@ func (h *userHandler) FindUserByID(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, user)
+	return response.Success(c, "SUCCESS", "User retrieved successfully", user)
 }
 
 func (h *userHandler) FindUserByEmail(c echo.Context) error {
@@ -58,7 +58,7 @@ func (h *userHandler) FindUserByEmail(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.JSON(200, user)
+	return response.Success(c, "SUCCESS", "User retrieved successfully", user)
 }
 
 func NewUserHandler(userService service.IUserService) IUserHandler {
