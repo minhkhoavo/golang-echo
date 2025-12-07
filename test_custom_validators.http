@@ -1,0 +1,96 @@
+// Test custom validators - ghi vào file test.http để test
+
+###
+# ✅ VALID Request - Vietnamese phone number
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Nguyen Van A",
+  "email": "nguyenvana@example.com",
+  "password": "securePassword123",
+  "phone": "0912345678"
+}
+
+###
+# ✅ VALID Request - International format
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Tran Thi B",
+  "email": "tranthib@example.com",
+  "password": "securePassword456",
+  "phone": "+84912345678"
+}
+
+###
+# ✅ VALID Request - 84 format (without +)
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Le Van C",
+  "email": "levanc@example.com",
+  "password": "securePassword789",
+  "phone": "84912345678"
+}
+
+###
+# ❌ INVALID - Wrong phone format
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Pham Van D",
+  "email": "phamvand@example.com",
+  "password": "securePassword999",
+  "phone": "1234567890"
+}
+
+###
+# ❌ INVALID - Missing phone field
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Hoang Thi E",
+  "email": "hoangthie@example.com",
+  "password": "securePassword111"
+}
+
+###
+# ❌ INVALID - Name too short
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "A",
+  "email": "test@example.com",
+  "password": "securePassword222",
+  "phone": "0912345678"
+}
+
+###
+# ❌ INVALID - Invalid email
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Nguyen Test",
+  "email": "invalid-email",
+  "password": "securePassword333",
+  "phone": "0912345678"
+}
+
+###
+# ❌ INVALID - Password too short
+POST http://localhost:8080/api/v1/users
+Content-Type: application/json
+
+{
+  "name": "Nguyen Short",
+  "email": "test@example.com",
+  "password": "123",
+  "phone": "0912345678"
+}

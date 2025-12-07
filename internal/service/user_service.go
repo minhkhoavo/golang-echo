@@ -24,6 +24,7 @@ func (u *userService) CreateUser(ctx context.Context, req *model.CreateUserReque
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
+		Phone:    req.Phone,
 	}
 	err := u.userRepo.Create(ctx, user)
 	if err != nil {

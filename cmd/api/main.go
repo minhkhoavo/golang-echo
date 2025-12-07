@@ -32,6 +32,11 @@ func main() {
 
 	// Create validator with translator (DI)
 	validator := utils.NewValidator(trans)
+	
+	// Register all custom validators
+	if err := validator.RegisterAllCustomValidators(); err != nil {
+		log.Fatalf("failed to register custom validators: %v", err)
+	}
 
 	// Pass validator to handler (DI)
 	userHandler := handler.NewUserHandler(userService, validator)
