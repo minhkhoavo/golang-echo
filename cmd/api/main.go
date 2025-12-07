@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -20,63 +20,79 @@ import (
 )
 
 func main() {
-	// Load configuration using Viper
+	// Load configuration
 	cfg, err := appConfig.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		panic(fmt.Sprintf("failed to load config: %v", err))
 	}
 
-	// Initialize database with DSN from config
+	// Initialize logger
+	logger := utils.InitLogger(cfg.Logging.Level, cfg.Logging.Format)
+
+	// Initialize database
 	db, err := config.InitializeDatabase(cfg.GetDSN())
 	if err != nil {
-		log.Fatalf("failed to initialize database: %v", err)
+		logger.Error("failed to initialize database", slog.Any("error", err))
+		panic(err)
 	}
 	defer db.Close()
 
-	// Initialize translator (DI - no globals)
+	// Initialize translator
 	enLocale := en.New()
 	uni := ut.New(enLocale, enLocale)
 	trans, _ := uni.GetTranslator("en")
 
-	// Create validator with translator (DI)
+	// Create validator
 	validator := utils.NewValidator(trans)
-	// Register all custom validators
 	if err := validator.RegisterAllCustomValidators(); err != nil {
-		log.Fatalf("failed to register custom validators: %v", err)
+		logger.Error("failed to register custom validators", slog.Any("error", err))
+		panic(err)
 	}
 
-	// Create JWT Manager (DI)
+	// Create JWT Manager
 	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Duration)
 
+	// Initialize rate limiter
+	appMiddleware.InitRateLimiter(cfg.RateLimit.RequestsPerMin, logger)
+
+	// Setup repositories & services
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, jwtManager)
 	userHandler := handler.NewUserHandler(userService, validator)
 
-	// Setup routes and start server
+	// Setup Echo
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.Validator = validator
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
+
+	// Add middlewares
+	e.Use(appMiddleware.RequestLoggerMiddleware(logger))
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Secure())
 	e.Use(middleware.Gzip())
+	e.Use(appMiddleware.RateLimitMiddleware())
 
+	// Health check
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(200, map[string]string{"status": "ok"})
+	})
+
+	// Routes
 	apiV1 := e.Group("/api/v1")
 
-	// ===== PUBLIC ROUTES (No authentication required) =====
-	publicRoutes := apiV1.Group("")
-	publicRoutes.POST("/users", userHandler.CreateUser)
-	publicRoutes.POST("/users/login", userHandler.Login)
+	// Public routes
+	apiV1.POST("/users", userHandler.CreateUser)
+	apiV1.POST("/users/login", userHandler.Login)
 
-	// ===== PROTECTED ROUTES (Authentication required) =====
-	protectedRoutes := apiV1.Group("")
-	protectedRoutes.Use(appMiddleware.JWTMiddleware(jwtManager))
+	// Protected routes
+	protected := apiV1.Group("")
+	protected.Use(appMiddleware.JWTMiddleware(jwtManager))
+	protected.GET("/users", userHandler.FindAllUsers)
+	protected.GET("/users/:id", userHandler.FindUserByID)
+	protected.GET("/users/by-email", userHandler.FindUserByEmail)
 
-	protectedRoutes.GET("/users", userHandler.FindAllUsers)
-	protectedRoutes.GET("/users/:id", userHandler.FindUserByID)
-	protectedRoutes.GET("/users/by-email", userHandler.FindUserByEmail)
-
-	log.Printf("Starting server on port %d\n", cfg.Server.Port)
+	logger.Info("Starting server", slog.Int("port", cfg.Server.Port))
 	e.Start(fmt.Sprintf(":%d", cfg.Server.Port))
 }

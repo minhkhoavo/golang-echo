@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 )
 
 func CustomHTTPErrorHandler(err error, c echo.Context) {
@@ -44,7 +43,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	} else {
 		// Unknown error (Unknown panic or third-party library error)
 		// Only log this error, DO NOT return details to client for security reasons
-		log.Errorf("Unhandled error occurred: %v", err)
+		// Just silently handle it without exposing details
 	}
 
 	// 3. Build standard error response

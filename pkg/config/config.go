@@ -13,6 +13,8 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Server   ServerConfig   `mapstructure:"server"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
+	Logging  LoggingConfig  `mapstructure:"logging"`
+	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
 }
 
 type DatabaseConfig struct {
@@ -34,6 +36,18 @@ type JWTConfig struct {
 	Duration time.Duration `mapstructure:"duration"`
 }
 
+type LoggingConfig struct {
+	Level     string `mapstructure:"level"`
+	Format    string `mapstructure:"format"`
+	AddSource bool   `mapstructure:"add_source"`
+}
+
+type RateLimitConfig struct {
+	Enabled        bool   `mapstructure:"enabled"`
+	RequestsPerMin int    `mapstructure:"requests_per_min"`
+	LimiterType    string `mapstructure:"limiter_type"`
+}
+
 // Load loads configuration from environment variables and .env file
 func Load() (*Config, error) {
 	// Set defaults
@@ -47,6 +61,12 @@ func Load() (*Config, error) {
 	viper.SetDefault("server.env", "development")
 	viper.SetDefault("jwt.secret", "your-secret-key-change-in-production")
 	viper.SetDefault("jwt.duration", "24h")
+	viper.SetDefault("logging.level", "info")
+	viper.SetDefault("logging.format", "json")
+	viper.SetDefault("logging.add_source", false)
+	viper.SetDefault("rate_limit.enabled", true)
+	viper.SetDefault("rate_limit.requests_per_min", 60)
+	viper.SetDefault("rate_limit.limiter_type", "sliding-window")
 
 	// Enable reading from .env file
 	viper.SetConfigName(".env")
@@ -73,6 +93,12 @@ func Load() (*Config, error) {
 	viper.BindEnv("server.env", "SERVER_ENV")
 	viper.BindEnv("jwt.secret", "JWT_SECRET")
 	viper.BindEnv("jwt.duration", "JWT_DURATION")
+	viper.BindEnv("logging.level", "LOG_LEVEL")
+	viper.BindEnv("logging.format", "LOG_FORMAT")
+	viper.BindEnv("logging.add_source", "LOG_ADD_SOURCE")
+	viper.BindEnv("rate_limit.enabled", "RATE_LIMIT_ENABLED")
+	viper.BindEnv("rate_limit.requests_per_min", "RATE_LIMIT_REQUESTS_PER_MIN")
+	viper.BindEnv("rate_limit.limiter_type", "RATE_LIMIT_TYPE")
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
