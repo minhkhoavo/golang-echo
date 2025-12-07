@@ -12,6 +12,7 @@ import (
 
 	"golang-echo/internal/config"
 	"golang-echo/internal/handler"
+	appMiddleware "golang-echo/internal/middleware"
 	"golang-echo/internal/repository"
 	"golang-echo/internal/service"
 	appConfig "golang-echo/pkg/config"
@@ -43,6 +44,7 @@ func main() {
 	if err := validator.RegisterAllCustomValidators(); err != nil {
 		log.Fatalf("failed to register custom validators: %v", err)
 	}
+
 	// Create JWT Manager (DI)
 	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Duration)
 
@@ -52,18 +54,28 @@ func main() {
 
 	// Setup routes and start server
 	e := echo.New()
+	e.Use(middleware.Recover())
 	e.Validator = validator
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
 	e.Use(middleware.CORS())
+	e.Use(middleware.RequestID())
+	e.Use(middleware.Secure())
+	e.Use(middleware.Gzip())
 
 	apiV1 := e.Group("/api/v1")
 
-	userGroup := apiV1.Group("/users")
-	userGroup.GET("", userHandler.FindAllUsers)
-	userGroup.GET("/:id", userHandler.FindUserByID)
-	userGroup.GET("/by-email", userHandler.FindUserByEmail)
-	userGroup.POST("", userHandler.CreateUser)
-	userGroup.POST("/login", userHandler.Login)
+	// ===== PUBLIC ROUTES (No authentication required) =====
+	publicRoutes := apiV1.Group("")
+	publicRoutes.POST("/users", userHandler.CreateUser)
+	publicRoutes.POST("/users/login", userHandler.Login)
+
+	// ===== PROTECTED ROUTES (Authentication required) =====
+	protectedRoutes := apiV1.Group("")
+	protectedRoutes.Use(appMiddleware.JWTMiddleware(jwtManager))
+
+	protectedRoutes.GET("/users", userHandler.FindAllUsers)
+	protectedRoutes.GET("/users/:id", userHandler.FindUserByID)
+	protectedRoutes.GET("/users/by-email", userHandler.FindUserByEmail)
 
 	log.Printf("Starting server on port %d\n", cfg.Server.Port)
 	e.Start(fmt.Sprintf(":%d", cfg.Server.Port))

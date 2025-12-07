@@ -10,6 +10,7 @@
 #   "request_id": "..."
 # }
 GET http://localhost:8080/api/v1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo1LCJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJuYW1lIjoiSm9obiBEb2UiLCJleHAiOjE3NjUyMDI1OTIsIm5iZiI6MTc2NTExNjE5MiwiaWF0IjoxNzY1MTE2MTkyfQ.U_caNG1ECN0jb_Wcvwq27JEQgcNYUQWqml5j56cIC40
 
 ###
 
