@@ -1,22 +1,31 @@
 package main
 
 import (
-	"golang-echo/internal/config"
-	"golang-echo/internal/handler"
-	"golang-echo/internal/repository"
-	"golang-echo/internal/service"
-	"golang-echo/pkg/utils"
+	"fmt"
 	"log"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+
+	"golang-echo/internal/config"
+	"golang-echo/internal/handler"
+	"golang-echo/internal/repository"
+	"golang-echo/internal/service"
+	appConfig "golang-echo/pkg/config"
+	"golang-echo/pkg/utils"
 )
 
 func main() {
-	dsn := "postgres://postgres:root@localhost:5432/golang?sslmode=disable"
-	db, err := config.InitializeDatabase(dsn)
+	// Load configuration using Viper
+	cfg, err := appConfig.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	// Initialize database with DSN from config
+	db, err := config.InitializeDatabase(cfg.GetDSN())
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
@@ -32,7 +41,7 @@ func main() {
 
 	// Create validator with translator (DI)
 	validator := utils.NewValidator(trans)
-	
+
 	// Register all custom validators
 	if err := validator.RegisterAllCustomValidators(); err != nil {
 		log.Fatalf("failed to register custom validators: %v", err)
@@ -54,5 +63,6 @@ func main() {
 	userGroup.GET("/by-email", userHandler.FindUserByEmail)
 	userGroup.POST("", userHandler.CreateUser)
 
-	e.Start(":8080")
+	log.Printf("Starting server on port %d\n", cfg.Server.Port)
+	e.Start(fmt.Sprintf(":%d", cfg.Server.Port))
 }

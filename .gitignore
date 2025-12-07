@@ -32,4 +32,4 @@ go.work.sum
 # .vscode/
 tmp/build-errors.log
 *.bin
-bin/api
+bin/**

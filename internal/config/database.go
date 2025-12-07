@@ -3,6 +3,9 @@ package config
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -31,33 +34,74 @@ func InitializeDatabase(dsn string) (*sqlx.DB, error) {
 
 	log.Println("Database connection established successfully")
 
-	// Create tables
-	if err := createTables(db); err != nil {
-		return nil, err
+	// Run migrations automatically
+	if err := runMigrations(db); err != nil {
+		log.Printf("Warning: Migration error: %v\n", err)
 	}
 
 	return db, nil
 }
 
-func createTables(db *sqlx.DB) error {
-	schema := `
-	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
-		email VARCHAR(255) NOT NULL UNIQUE,
-		password VARCHAR(255) NOT NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-	);
+// runMigrations executes all pending migrations
+func runMigrations(db *sqlx.DB) error {
+	// Create tracking table
+	if _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version VARCHAR(255) PRIMARY KEY,
+			executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`); err != nil {
+		return err
+	}
 
-	CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-	`
-
-	_, err := db.Exec(schema)
+	// Get all migration files
+	files, err := os.ReadDir("db/migrations")
 	if err != nil {
 		return err
 	}
 
-	log.Println("Database tables created successfully")
+	// Get executed migrations
+	executed := make(map[string]bool)
+	rows, err := db.Query("SELECT version FROM schema_migrations")
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var version string
+			rows.Scan(&version)
+			executed[version] = true
+		}
+	}
+
+	// Sort and execute pending migrations
+	var sqlFiles []string
+	for _, f := range files {
+		if !f.IsDir() && filepath.Ext(f.Name()) == ".sql" {
+			sqlFiles = append(sqlFiles, f.Name())
+		}
+	}
+	sort.Strings(sqlFiles)
+
+	for _, filename := range sqlFiles {
+		version := filename[:len(filename)-4] // Remove .sql
+		if executed[version] {
+			continue
+		}
+
+		sql, err := os.ReadFile(filepath.Join("db/migrations", filename))
+		if err != nil {
+			return err
+		}
+
+		if _, err := db.Exec(string(sql)); err != nil {
+			return err
+		}
+
+		if _, err := db.Exec("INSERT INTO schema_migrations (version) VALUES ($1)", version); err != nil {
+			return err
+		}
+
+		log.Printf("Migration: %s\n", filename)
+	}
+
 	return nil
 }
