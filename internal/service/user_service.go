@@ -19,17 +19,7 @@ type userService struct {
 }
 
 func (u *userService) CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error) {
-	// Validate input
-	if req.Name == "" || req.Email == "" || req.Password == "" {
-		return nil, response.BadRequest("VALIDATION_FAILED", "All fields are required", nil)
-	}
-
-	// Check password length
-	if len(req.Password) < 6 {
-		return nil, response.BadRequest("PASSWORD_TOO_SHORT", "Password must be at least 6 characters", nil)
-	}
-
-	// Create user directly - let database constraint handle duplicate check
+	// Create user directly - validation is done in handler
 	user := &model.User{
 		Name:     req.Name,
 		Email:    req.Email,
@@ -62,9 +52,6 @@ func (u *userService) FindUserByID(ctx context.Context, id string) (*model.User,
 }
 
 func (u *userService) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	if email == "" {
-		return nil, response.BadRequest("VALIDATION_FAILED", "Email cannot be empty", nil)
-	}
 	user, err := u.userRepo.FindUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {

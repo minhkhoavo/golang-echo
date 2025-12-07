@@ -33,18 +33,13 @@ type PaginationMeta struct {
 }
 
 // ErrorResponse represents a standardized error response
-// This is used by CustomHTTPErrorHandler to format AppError responses
+// Errors field is now a dict (map) for better client-side consumption
+// Example: { "email": "Email is required", "name": "Name is required" }
 type ErrorResponse struct {
-	Code      string       `json:"code"`
-	Message   string       `json:"message"`
-	FieldErrs []FieldError `json:"errors,omitempty"`
-	RequestID string       `json:"request_id,omitempty"`
-}
-
-// FieldError represents a validation error for a specific field
-type FieldError struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
+	Code      string            `json:"code"`
+	Message   string            `json:"message"`
+	Errors    map[string]string `json:"errors,omitempty"` // ← Changed from []FieldError to map
+	RequestID string            `json:"request_id,omitempty"`
 }
 
 // ToErrorResponse converts AppError to ErrorResponse with request context

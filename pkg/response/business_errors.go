@@ -5,10 +5,11 @@ import (
 )
 
 type AppError struct {
-	Code    int
-	Key     string
-	Message string
-	Err     error
+	Code     int
+	Key      string
+	Message  string
+	Err      error
+	FieldErr map[string]string // ← Changed to map format (field name → error message)
 }
 
 func (e *AppError) Error() string {
@@ -28,6 +29,16 @@ func NewAppError(code int, key string, msg string, err error) *AppError {
 	}
 }
 
+// NewAppErrorWithFieldErrors creates an AppError with field-level validation errors (map format)
+func NewAppErrorWithFieldErrors(code int, key string, msg string, fieldErrs map[string]string) *AppError {
+	return &AppError{
+		Code:     code,
+		Key:      key,
+		Message:  msg,
+		FieldErr: fieldErrs,
+	}
+}
+
 // BadRequest returns a 400 Bad Request error
 func BadRequest(key string, message string, err error) *AppError {
 	return &AppError{
@@ -35,6 +46,16 @@ func BadRequest(key string, message string, err error) *AppError {
 		Key:     key,
 		Message: message,
 		Err:     err,
+	}
+}
+
+// BadRequestWithFields returns a 400 Bad Request error with field errors (map format)
+func BadRequestWithFields(key string, message string, fieldErrs map[string]string) *AppError {
+	return &AppError{
+		Code:     http.StatusBadRequest,
+		Key:      key,
+		Message:  message,
+		FieldErr: fieldErrs,
 	}
 }
 

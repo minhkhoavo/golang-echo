@@ -51,6 +51,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	errorResponse := response.ErrorResponse{
 		Code:      key,
 		Message:   msg,
+		Errors:    appErr.FieldErr,
 		RequestID: c.Response().Header().Get(echo.HeaderXRequestID),
 	}
 

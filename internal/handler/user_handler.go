@@ -5,6 +5,7 @@ import (
 	"golang-echo/internal/service"
 	"golang-echo/pkg/request"
 	"golang-echo/pkg/response"
+	"golang-echo/pkg/utils"
 
 	"github.com/labstack/echo/v4"
 )
@@ -18,6 +19,7 @@ type IUserHandler interface {
 
 type userHandler struct {
 	userService service.IUserService
+	validator   *utils.CustomValidator // ← DI: inject validator
 }
 
 func (h *userHandler) CreateUser(c echo.Context) error {
@@ -27,7 +29,15 @@ func (h *userHandler) CreateUser(c echo.Context) error {
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return response.BadRequest("VALIDATION_FAILED", "Validation failed", err)
+		// Extract field-level validation errors using the validator instance
+		fieldErrors := h.validator.ExtractValidationErrors(err)
+		// If no field errors were extracted, it means validation failed for some other reason
+		if len(fieldErrors) == 0 {
+			// Log for debugging
+			c.Logger().Errorf("Validation error (non-field): %v, Type: %T", err, err)
+			return response.BadRequest("VALIDATION_FAILED", "Validation failed", err)
+		}
+		return response.BadRequestWithFields("VALIDATION_FAILED", "Validation failed", fieldErrors)
 	}
 	user, err := h.userService.CreateUser(c.Request().Context(), &req)
 	if err != nil {
@@ -74,8 +84,9 @@ func (h *userHandler) FindUserByEmail(c echo.Context) error {
 	return response.Success(c, "SUCCESS", "User retrieved successfully", user)
 }
 
-func NewUserHandler(userService service.IUserService) IUserHandler {
+func NewUserHandler(userService service.IUserService, validator *utils.CustomValidator) IUserHandler {
 	return &userHandler{
 		userService: userService,
+		validator:   validator,
 	}
 }
