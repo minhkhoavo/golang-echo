@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
 
 	"golang-echo/internal/config"
@@ -36,24 +37,24 @@ func main() {
 	uni := ut.New(enLocale, enLocale)
 	trans, _ := uni.GetTranslator("en")
 
-	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
-
 	// Create validator with translator (DI)
 	validator := utils.NewValidator(trans)
-
 	// Register all custom validators
 	if err := validator.RegisterAllCustomValidators(); err != nil {
 		log.Fatalf("failed to register custom validators: %v", err)
 	}
+	// Create JWT Manager (DI)
+	jwtManager := utils.NewJWTManager(cfg.JWT.Secret, cfg.JWT.Duration)
 
-	// Pass validator to handler (DI)
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo, jwtManager)
 	userHandler := handler.NewUserHandler(userService, validator)
 
 	// Setup routes and start server
 	e := echo.New()
 	e.Validator = validator
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
+	e.Use(middleware.CORS())
 
 	apiV1 := e.Group("/api/v1")
 
@@ -62,6 +63,7 @@ func main() {
 	userGroup.GET("/:id", userHandler.FindUserByID)
 	userGroup.GET("/by-email", userHandler.FindUserByEmail)
 	userGroup.POST("", userHandler.CreateUser)
+	userGroup.POST("/login", userHandler.Login)
 
 	log.Printf("Starting server on port %d\n", cfg.Server.Port)
 	e.Start(fmt.Sprintf(":%d", cfg.Server.Port))

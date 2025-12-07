@@ -20,3 +20,13 @@ type CreateUserRequest struct {
 	Password string `json:"password" validate:"required,min=6,max=50"`
 	Phone    string `json:"phone" validate:"required,vi_phone"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6,max=50"`
+}
+
+type LoginResponse struct {
+	AccessToken string `json:"access_token"`
+	User        *User  `json:"user"`
+}

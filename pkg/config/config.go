@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Server   ServerConfig   `mapstructure:"server"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
 }
 
 type DatabaseConfig struct {
@@ -27,6 +29,11 @@ type ServerConfig struct {
 	Env  string `mapstructure:"env"`
 }
 
+type JWTConfig struct {
+	Secret   string        `mapstructure:"secret"`
+	Duration time.Duration `mapstructure:"duration"`
+}
+
 // Load loads configuration from environment variables and .env file
 func Load() (*Config, error) {
 	// Set defaults
@@ -38,6 +45,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("database.ssl_mode", "disable")
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.env", "development")
+	viper.SetDefault("jwt.secret", "your-secret-key-change-in-production")
+	viper.SetDefault("jwt.duration", "24h")
 
 	// Enable reading from .env file
 	viper.SetConfigName(".env")
@@ -62,6 +71,8 @@ func Load() (*Config, error) {
 	viper.BindEnv("database.ssl_mode", "DB_SSL_MODE")
 	viper.BindEnv("server.port", "SERVER_PORT")
 	viper.BindEnv("server.env", "SERVER_ENV")
+	viper.BindEnv("jwt.secret", "JWT_SECRET")
+	viper.BindEnv("jwt.duration", "JWT_DURATION")
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {

@@ -15,11 +15,35 @@ type IUserHandler interface {
 	FindAllUsers(c echo.Context) error
 	FindUserByID(c echo.Context) error
 	FindUserByEmail(c echo.Context) error
+	Login(c echo.Context) error
 }
 
 type userHandler struct {
 	userService service.IUserService
-	validator   *utils.CustomValidator // ← DI: inject validator
+	validator   *utils.CustomValidator
+}
+
+func (h *userHandler) Login(c echo.Context) error {
+	var req model.LoginRequest
+	if err := c.Bind(&req); err != nil {
+		return response.BadRequest("BIND_ERROR", "Invalid request body", err)
+	}
+
+	if err := c.Validate(&req); err != nil {
+		fieldErrors := h.validator.ExtractValidationErrors(err)
+		if len(fieldErrors) == 0 {
+			c.Logger().Errorf("Validation error (non-field): %v, Type: %T", err, err)
+			return response.BadRequest("VALIDATION_FAILED", "Validation failed", err)
+		}
+		return response.BadRequestWithFields("VALIDATION_FAILED", "Validation failed", fieldErrors)
+	}
+
+	loginResp, err := h.userService.Login(c.Request().Context(), &req)
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "SUCCESS", "Login successful", loginResp)
 }
 
 func (h *userHandler) CreateUser(c echo.Context) error {
