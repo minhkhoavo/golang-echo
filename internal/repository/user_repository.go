@@ -13,7 +13,7 @@ import (
 
 type IUserRepository interface {
 	Create(ctx context.Context, user *model.User) error
-	FindAll(ctx context.Context) ([]*model.User, error)
+	FindAll(ctx context.Context, limit int, offset int) ([]*model.User, int64, error)
 	FindUserByID(ctx context.Context, id string) (*model.User, error)
 	FindUserByEmail(ctx context.Context, email string) (*model.User, error)
 }
@@ -39,11 +39,32 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *userRepository) FindAll(ctx context.Context) ([]*model.User, error) {
-	var users []*model.User
-	query := `SELECT id, name, email, password, created_at, updated_at FROM users ORDER BY id`
-	err := r.db.SelectContext(ctx, &users, query)
-	return users, err
+func (r *userRepository) FindAll(ctx context.Context, limit int, offset int) ([]*model.User, int64, error) {
+	var (
+		users []*model.User
+		total int64
+	)
+
+	countQuery := `SELECT COUNT(*) FROM users`
+	if err := r.db.GetContext(ctx, &total, countQuery); err != nil {
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []*model.User{}, 0, nil
+	}
+
+	dataQuery := `
+        SELECT id, name, email, password, created_at, updated_at
+        FROM users
+        ORDER BY id DESC
+        LIMIT $1 OFFSET $2
+    `
+	if err := r.db.SelectContext(ctx, &users, dataQuery, limit, offset); err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
 }
 
 func (r *userRepository) FindUserByID(ctx context.Context, id string) (*model.User, error) {

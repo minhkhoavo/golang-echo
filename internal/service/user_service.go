@@ -10,7 +10,7 @@ import (
 
 type IUserService interface {
 	CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error)
-	FindAllUsers(ctx context.Context) ([]*model.User, error)
+	FindAllUsers(ctx context.Context, limit int, offset int) ([]*model.User, int64, error)
 	FindUserByID(ctx context.Context, email string) (*model.User, error)
 	FindUserByEmail(ctx context.Context, email string) (*model.User, error)
 }
@@ -46,12 +46,8 @@ func (u *userService) CreateUser(ctx context.Context, req *model.CreateUserReque
 	return user, nil
 }
 
-func (u *userService) FindAllUsers(ctx context.Context) ([]*model.User, error) {
-	users, err := u.userRepo.FindAll(ctx)
-	if err != nil {
-		return nil, response.Internal(err)
-	}
-	return users, nil
+func (u *userService) FindAllUsers(ctx context.Context, limit int, offset int) ([]*model.User, int64, error) {
+	return u.userRepo.FindAll(ctx, limit, offset)
 }
 
 func (u *userService) FindUserByID(ctx context.Context, id string) (*model.User, error) {

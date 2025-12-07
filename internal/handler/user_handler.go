@@ -3,6 +3,7 @@ package handler
 import (
 	"golang-echo/internal/model"
 	"golang-echo/internal/service"
+	"golang-echo/pkg/request"
 	"golang-echo/pkg/response"
 
 	"github.com/labstack/echo/v4"
@@ -36,11 +37,23 @@ func (h *userHandler) CreateUser(c echo.Context) error {
 }
 
 func (h *userHandler) FindAllUsers(c echo.Context) error {
-	users, err := h.userService.FindAllUsers(c.Request().Context())
+	var pagReq request.PaginationReq
+	if err := c.Bind(&pagReq); err != nil {
+		return response.BadRequest("BIND_ERROR", "Invalid pagination parameters", err)
+	}
+	offset, limit, page, pageSize := pagReq.GetQueryParams()
+	users, total, err := h.userService.FindAllUsers(c.Request().Context(), limit, offset)
 	if err != nil {
 		return err
 	}
-	return response.List(c, "SUCCESS", "Users retrieved successfully", users)
+	totalPages := int(total+int64(pageSize)-1) / pageSize
+	pagination := &response.PaginationMeta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+		TotalItems: total,
+	}
+	return response.ListWithPagination(c, "SUCCESS", "Users retrieved successfully", users, pagination)
 }
 
 func (h *userHandler) FindUserByID(c echo.Context) error {
