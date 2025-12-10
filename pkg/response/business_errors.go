@@ -108,3 +108,13 @@ func Internal(err error) *AppError {
 		Err:     err,
 	}
 }
+
+// TooManyRequests returns a 429 Too Many Requests error
+func TooManyRequests(key string, message string, err error) *AppError {
+	return &AppError{
+		Code:    http.StatusTooManyRequests,
+		Key:     key,
+		Message: message,
+		Err:     err,
+	}
+}
