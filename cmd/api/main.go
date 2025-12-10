@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 
@@ -70,28 +69,28 @@ func main() {
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
 
 	// Add middlewares
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogStatus:    true,
-		LogMethod:    true,
-		LogURI:       true,
-		LogRemoteIP:  true,
-		LogRequestID: true,
-		LogLatency:   true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			slog.LogAttrs(
-				context.Background(),
-				slog.LevelInfo,
-				"http_request",
-				slog.String("method", v.Method),
-				slog.String("uri", v.URI),
-				slog.Int("status", v.Status),
-				slog.String("remote_ip", v.RemoteIP),
-				slog.String("latency", v.Latency.String()),
-				slog.String("request_id", v.RequestID),
-			)
-			return nil
-		},
-	}))
+	// e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+	// 	LogStatus:    true,
+	// 	LogMethod:    true,
+	// 	LogURI:       true,
+	// 	LogRemoteIP:  true,
+	// 	LogRequestID: true,
+	// 	LogLatency:   true,
+	// 	LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+	// 		slog.LogAttrs(
+	// 			context.Background(),
+	// 			slog.LevelInfo,
+	// 			"http_request",
+	// 			slog.String("method", v.Method),
+	// 			slog.String("uri", v.URI),
+	// 			slog.Int("status", v.Status),
+	// 			slog.String("remote_ip", v.RemoteIP),
+	// 			slog.String("latency", v.Latency.String()),
+	// 			slog.String("request_id", v.RequestID),
+	// 		)
+	// 		return nil
+	// 	},
+	// }))
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Secure())
