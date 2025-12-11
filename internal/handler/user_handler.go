@@ -1,11 +1,13 @@
 package handler
 
 import (
+	appMiddleware "golang-echo/internal/middleware"
 	"golang-echo/internal/model"
 	"golang-echo/internal/service"
 	"golang-echo/pkg/request"
 	"golang-echo/pkg/response"
 	"golang-echo/pkg/utils"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 )
@@ -16,6 +18,7 @@ type IUserHandler interface {
 	FindUserByID(c echo.Context) error
 	FindUserByEmail(c echo.Context) error
 	Login(c echo.Context) error
+	GetMyInfo(c echo.Context) error
 }
 
 type userHandler struct {
@@ -89,10 +92,13 @@ func (h *userHandler) FindAllUsers(c echo.Context) error {
 	}
 	return response.ListWithPagination(c, "SUCCESS", "Users retrieved successfully", users, pagination)
 }
-
 func (h *userHandler) FindUserByID(c echo.Context) error {
 	id := c.Param("id")
-	user, err := h.userService.FindUserByID(c.Request().Context(), id)
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		return response.BadRequest("INVALID_ID", "Invalid user ID format", err)
+	}
+	user, err := h.userService.FindUserByID(c.Request().Context(), userID)
 	if err != nil {
 		return err
 	}
@@ -106,6 +112,21 @@ func (h *userHandler) FindUserByEmail(c echo.Context) error {
 		return err
 	}
 	return response.Success(c, "SUCCESS", "User retrieved successfully", user)
+}
+
+func (h *userHandler) GetMyInfo(c echo.Context) error {
+	userID := appMiddleware.GetUserIDFromContext(c)
+	if userID == 0 {
+		return response.Unauthorized("INVALID_CONTEXT", "User ID not found in context", nil)
+	}
+
+	// Convert int to string using strconv
+	user, err := h.userService.FindUserByID(c.Request().Context(), userID)
+	if err != nil {
+		return err
+	}
+
+	return response.Success(c, "SUCCESS", "User info retrieved successfully", user)
 }
 
 func NewUserHandler(userService service.IUserService, validator *utils.CustomValidator) IUserHandler {

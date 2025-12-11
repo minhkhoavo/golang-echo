@@ -31,6 +31,7 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		code = appErr.Code
 		key = appErr.Key
 		msg = appErr.Message
+
 		// Log the underlying error
 		// if appErr.Err != nil {
 		// 	log.Errorf("App Error occurred: %v", appErr.Err)
@@ -52,8 +53,13 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 	errorResponse := response.ErrorResponse{
 		Code:      key,
 		Message:   msg,
-		Errors:    appErr.FieldErr,
+		Errors:    nil,
 		RequestID: c.Response().Header().Get(echo.HeaderXRequestID),
+	}
+
+	// Add field errors if it's an AppError with field validation errors
+	if appErr != nil && appErr.FieldErr != nil {
+		errorResponse.Errors = appErr.FieldErr
 	}
 
 	// 4. Send response to client

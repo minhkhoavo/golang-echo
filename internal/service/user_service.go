@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"golang-echo/internal/model"
 	"golang-echo/internal/repository"
 	"golang-echo/pkg/response"
@@ -13,7 +14,7 @@ import (
 type IUserService interface {
 	CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error)
 	FindAllUsers(ctx context.Context, limit int, offset int) ([]*model.User, int64, error)
-	FindUserByID(ctx context.Context, email string) (*model.User, error)
+	FindUserByID(ctx context.Context, id int) (*model.User, error)
 	FindUserByEmail(ctx context.Context, email string) (*model.User, error)
 	Login(ctx context.Context, req *model.LoginRequest) (*model.LoginResponse, error)
 }
@@ -59,7 +60,7 @@ func (u *userService) FindAllUsers(ctx context.Context, limit int, offset int) (
 	return u.userRepo.FindAll(ctx, limit, offset)
 }
 
-func (u *userService) FindUserByID(ctx context.Context, id string) (*model.User, error) {
+func (u *userService) FindUserByID(ctx context.Context, id int) (*model.User, error) {
 	user, err := u.userRepo.FindUserByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -93,8 +94,8 @@ func (u *userService) Login(ctx context.Context, req *model.LoginRequest) (*mode
 	if err := utils.VerifyPassword(user.Password, req.Password); err != nil {
 		return nil, response.Unauthorized("INVALID_CREDENTIALS", "Invalid email or password", err)
 	}
-
-	token, err := u.jwtManager.GenerateToken(user.ID, user.Email, user.Name)
+	fmt.Println("User::::", user.Role)
+	token, err := u.jwtManager.GenerateToken(user.ID, user.Email, user.Name, user.Role)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate jwt token", slog.String("email", req.Email), slog.Any("error", err))
 		return nil, response.Internal(err)

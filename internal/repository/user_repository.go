@@ -14,7 +14,7 @@ import (
 type IUserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	FindAll(ctx context.Context, limit int, offset int) ([]*model.User, int64, error)
-	FindUserByID(ctx context.Context, id string) (*model.User, error)
+	FindUserByID(ctx context.Context, id int) (*model.User, error)
 	FindUserByEmail(ctx context.Context, email string) (*model.User, error)
 }
 
@@ -67,8 +67,8 @@ func (r *userRepository) FindAll(ctx context.Context, limit int, offset int) ([]
 	return users, total, nil
 }
 
-func (r *userRepository) FindUserByID(ctx context.Context, id string) (*model.User, error) {
-	query := `SELECT id, name, email, password, created_at, updated_at FROM users WHERE id = $1`
+func (r *userRepository) FindUserByID(ctx context.Context, id int) (*model.User, error) {
+	query := `SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE id = $1`
 	var user model.User
 	err := r.db.GetContext(ctx, &user, query, id)
 	if err != nil {
@@ -81,7 +81,7 @@ func (r *userRepository) FindUserByID(ctx context.Context, id string) (*model.Us
 }
 
 func (r *userRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	query := `SELECT id, name, email, password, created_at, updated_at FROM users WHERE email = $1`
+	query := `SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE email = $1`
 	var user model.User
 	err := r.db.GetContext(ctx, &user, query, email)
 	if err != nil {

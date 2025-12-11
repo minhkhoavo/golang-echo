@@ -35,3 +35,11 @@ Content-Type: application/json
   "email": "nonexistent@example.com",
   "password": "password123"
 }
+
+### Get personal info (My Info) - Requires JWT token
+GET http://localhost:8080/api/v1/my-info
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6ImpvaG5AZXhhbXBsZS5jb20iLCJuYW1lIjoiSm9obiBEb2UiLCJyb2xlIjoiIiwiZXhwIjoxNzY1NTUxMjc3LCJuYmYiOjE3NjU0NjQ4NzcsImlhdCI6MTc2NTQ2NDg3N30.PI7WnLpXE-MVFmpWfxG-WzioeWSIue9jmsVcDUP7Bk0
+
+### Get personal info without authorization (should fail with 401)
+GET http://localhost:8080/api/v1/my-info
+

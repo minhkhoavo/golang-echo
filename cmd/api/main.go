@@ -120,9 +120,14 @@ func main() {
 	// Protected routes
 	protected := apiV1.Group("")
 	protected.Use(appMiddleware.JWTMiddleware(jwtManager))
-	protected.GET("/users", userHandler.FindAllUsers)
-	protected.GET("/users/:id", userHandler.FindUserByID)
-	protected.GET("/users/by-email", userHandler.FindUserByEmail)
+	protected.GET("/my-info", userHandler.GetMyInfo)
+
+	// Admin only routes
+	admin := protected.Group("")
+	admin.Use(appMiddleware.AdminMiddleware())
+	admin.GET("/users", userHandler.FindAllUsers)
+	admin.GET("/users/:id", userHandler.FindUserByID)
+	admin.GET("/users/by-email", userHandler.FindUserByEmail)
 
 	slog.Info("Starting server", slog.Int("port", cfg.Server.Port))
 	e.Start(fmt.Sprintf(":%d", cfg.Server.Port))

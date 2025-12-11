@@ -3,6 +3,7 @@ package middleware
 import (
 	"strings"
 
+	"golang-echo/pkg/constants"
 	"golang-echo/pkg/response"
 	"golang-echo/pkg/utils"
 
@@ -30,6 +31,20 @@ func JWTMiddleware(jwtManager *utils.JWTManager) echo.MiddlewareFunc {
 
 			c.Set("user_id", claims.UserID)
 			c.Set("email", claims.Email)
+			c.Set("name", claims.Name)
+			c.Set("role", claims.Role)
+			return next(c)
+		}
+	}
+}
+
+func AdminMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			role, ok := c.Get("role").(string)
+			if !ok || !constants.IsAdmin(role) {
+				return response.Forbidden("FORBIDDEN", "You do not have permission to access this resource", nil)
+			}
 			return next(c)
 		}
 	}
